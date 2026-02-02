@@ -37,3 +37,4 @@ public class Card {
 
     @Column(name = "expiration_date")
     private LocalDate expirationDate;
+}
