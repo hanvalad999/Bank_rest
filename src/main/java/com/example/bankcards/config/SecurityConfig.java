@@ -19,7 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties({JwtProperties.class, AdminProperties.class})
+@EnableConfigurationProperties({JwtProperties.class, AdminProperties.class, CardEncryptionProperties.class})
 public class SecurityConfig {
 
     @Bean
