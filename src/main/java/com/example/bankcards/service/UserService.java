@@ -8,13 +8,18 @@ import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.BadRequestException;
 import com.example.bankcards.exception.NotFoundException;
 import com.example.bankcards.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -24,6 +29,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional
     public UserResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.username())) {
             throw new BadRequestException("Username already exists");
@@ -34,9 +40,11 @@ public class UserService {
                 .role(Role.USER)
                 .build();
         userRepository.save(user);
+        log.info("User registered: userId={}, username={}", user.getId(), user.getUsername());
         return toResponse(user);
     }
 
+    @Transactional
     public UserResponse createUser(CreateUserRequest request) {
         if (userRepository.existsByUsername(request.username())) {
             throw new BadRequestException("Username already exists");
@@ -47,6 +55,8 @@ public class UserService {
                 .role(request.role())
                 .build();
         userRepository.save(user);
+        log.info("User created: userId={}, username={}, role={}",
+                user.getId(), user.getUsername(), user.getRole());
         return toResponse(user);
     }
 
@@ -64,11 +74,13 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
+    @Transactional
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
             throw new NotFoundException("User not found");
         }
         userRepository.deleteById(id);
+        log.info("User deleted: userId={}", id);
     }
 
     private UserResponse toResponse(User user) {

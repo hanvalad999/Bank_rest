@@ -9,6 +9,9 @@ import com.example.bankcards.exception.BadRequestException;
 import com.example.bankcards.exception.NotFoundException;
 import com.example.bankcards.repository.CardRepository;
 import com.example.bankcards.util.CardNumberMasker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,6 +22,8 @@ import java.time.LocalDate;
 
 @Service
 public class CardService {
+
+    private static final Logger log = LoggerFactory.getLogger(CardService.class);
 
     private final CardRepository cardRepository;
     private final UserService userService;
@@ -40,8 +45,18 @@ public class CardService {
                 .status(status)
                 .expirationDate(request.expirationDate())
                 .build();
-        cardRepository.save(card);
-        return toResponse(card);
+
+        try {
+            cardRepository.save(card);
+            log.info("Card created: cardId={}, userId={}, status={}, expirationDate={}",
+                    card.getId(), user.getId(), status, request.expirationDate());
+            return toResponse(card);
+        } catch (DataIntegrityViolationException e) {
+            // Обработка нарушения unique constraint на уровне БД
+            log.warn("Attempt to create duplicate card: userId={}, cardNumber length={}",
+                    user.getId(), request.cardNumber().length());
+            throw new BadRequestException("Card with this number already exists");
+        }
     }
 
     public Page<CardResponse> getCardsForUser(String username, CardStatus status, Pageable pageable) {
@@ -75,7 +90,11 @@ public class CardService {
     @Transactional
     public CardResponse updateStatus(Long id, CardStatus status) {
         Card card = cardRepository.findById(id).orElseThrow(() -> new NotFoundException("Card not found"));
+        CardStatus oldStatus = card.getStatus();
+        validateStatusTransition(card, status);
         card.setStatus(status);
+        log.info("Card status updated: cardId={}, oldStatus={}, newStatus={}",
+                id, oldStatus, status);
         return toResponse(card);
     }
 
@@ -85,7 +104,11 @@ public class CardService {
         if (!card.getUser().getUsername().equals(username)) {
             throw new BadRequestException("Card does not belong to current user");
         }
+        CardStatus oldStatus = card.getStatus();
+        validateStatusTransition(card, CardStatus.BLOCKED);
         card.setStatus(CardStatus.BLOCKED);
+        log.info("Card blocked by user: cardId={}, username={}, oldStatus={}",
+                id, username, oldStatus);
         return toResponse(card);
     }
 
@@ -100,6 +123,7 @@ public class CardService {
             throw new NotFoundException("Card not found");
         }
         cardRepository.deleteById(id);
+        log.info("Card deleted: cardId={}", id);
     }
 
     public Card getCardEntityForUpdate(Long id) {
@@ -110,6 +134,25 @@ public class CardService {
     private void validateCardNumber(String cardNumber) {
         if (!cardNumber.matches("\\d{12,19}")) {
             throw new BadRequestException("Card number must contain 12-19 digits");
+        }
+    }
+
+    private void validateStatusTransition(Card card, CardStatus newStatus) {
+        CardStatus current = card.getStatus();
+
+        // Нельзя изменить статус истекшей карты
+        if (current == CardStatus.EXPIRED) {
+            throw new BadRequestException("Cannot change status of expired card");
+        }
+
+        // Нельзя активировать истекшую карту
+        if (newStatus == CardStatus.ACTIVE && card.getExpirationDate() != null
+                && card.getExpirationDate().isBefore(LocalDate.now())) {
+            throw new BadRequestException("Cannot activate expired card");
+        }
+
+        if (current == CardStatus.BLOCKED && newStatus == CardStatus.ACTIVE) {
+            throw new BadRequestException("Blocked card cannot be activated directly");
         }
     }
 
