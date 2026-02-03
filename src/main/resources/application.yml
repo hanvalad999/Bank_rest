@@ -26,10 +26,14 @@ server:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:your-256-bit-secret-key-for-jwt-token-generation-minimum-32-characters}
+    # JWT_SECRET must be set as environment variable or system property
+    # Minimum 32 characters, base64 encoded
+    secret: ${JWT_SECRET}
     expiration: 86400000 # 24 hours in milliseconds
   card:
-    encryption-key: ${APP_CARD_ENCRYPTION_KEY:MTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTBhYmNkZWY=} # Base64 encoded 32-byte key
+    # APP_CARD_ENCRYPTION_KEY must be set as environment variable or system property
+    # Base64 encoded 32-byte key
+    encryption-key: ${APP_CARD_ENCRYPTION_KEY}
 
 springdoc:
   api-docs:

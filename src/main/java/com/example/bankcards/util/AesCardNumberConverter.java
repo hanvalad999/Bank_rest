@@ -1,7 +1,11 @@
 package com.example.bankcards.util;
 
+import com.example.bankcards.config.CardEncryptionProperties;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -14,12 +18,20 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 @Converter
-public class AesCardNumberConverter implements AttributeConverter<String, String> {
+@Component
+public class AesCardNumberConverter implements AttributeConverter<String, String>, ApplicationContextAware {
     private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
     private static final int GCM_TAG_LENGTH_BITS = 128;
     private static final int IV_LENGTH_BYTES = 12;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+    private static ApplicationContext applicationContext;
+
+    @Override
+    public void setApplicationContext(ApplicationContext context) {
+        applicationContext = context;
+    }
 
     @Override
     public String convertToDatabaseColumn(String attribute) {
@@ -65,9 +77,20 @@ public class AesCardNumberConverter implements AttributeConverter<String, String
     }
 
     private SecretKey getSecretKey() {
-        String encodedKey = System.getProperty("app.card.encryption-key", System.getenv("APP_CARD_ENCRYPTION_KEY"));
+        if (applicationContext == null) {
+            // Fallback для случаев, когда Spring контекст еще не инициализирован
+            String encodedKey = System.getProperty("app.card.encryption-key", System.getenv("APP_CARD_ENCRYPTION_KEY"));
+            if (encodedKey == null || encodedKey.isBlank()) {
+                throw new IllegalStateException("Card encryption key is not configured");
+            }
+            byte[] keyBytes = Base64.getDecoder().decode(encodedKey);
+            return new SecretKeySpec(keyBytes, ALGORITHM);
+        }
+
+        CardEncryptionProperties properties = applicationContext.getBean(CardEncryptionProperties.class);
+        String encodedKey = properties.getEncryptionKey();
         if (encodedKey == null || encodedKey.isBlank()) {
-            throw new IllegalStateException("Card encryption key is not configured");
+            throw new IllegalStateException("Card encryption key is not configured. Set app.card.encryption-key property");
         }
         byte[] keyBytes = Base64.getDecoder().decode(encodedKey);
         return new SecretKeySpec(keyBytes, ALGORITHM);
