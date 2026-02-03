@@ -8,6 +8,11 @@ import com.example.bankcards.entity.Transfer;
 import com.example.bankcards.exception.BadRequestException;
 import com.example.bankcards.repository.CardRepository;
 import com.example.bankcards.repository.TransferRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +23,8 @@ import java.time.LocalDateTime;
 @Service
 public class TransferService {
 
+    private static final Logger log = LoggerFactory.getLogger(TransferService.class);
+
     private final CardRepository cardRepository;
     private final TransferRepository transferRepository;
 
@@ -26,24 +33,47 @@ public class TransferService {
         this.transferRepository = transferRepository;
     }
 
+    @Retryable(retryFor = {PessimisticLockingFailureException.class}, maxAttempts = 3, backoff = @Backoff(delay = 100))
     @Transactional
     public TransferResponse transfer(String username, TransferRequest request) {
         if (request.fromCardId().equals(request.toCardId())) {
             throw new BadRequestException("Source and destination cards must differ");
         }
-        Card from = cardRepository.findByIdForUpdate(request.fromCardId())
-                .orElseThrow(() -> new BadRequestException("Source card not found"));
-        Card to = cardRepository.findByIdForUpdate(request.toCardId())
-                .orElseThrow(() -> new BadRequestException("Destination card not found"));
+
+        BigDecimal amount = request.amount();
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Transfer amount must be positive");
+        }
+
+        // Блокируем карты в определенном порядке для предотвращения deadlock
+        Long fromId = request.fromCardId();
+        Long toId = request.toCardId();
+        Long firstId = fromId < toId ? fromId : toId;
+        Long secondId = fromId < toId ? toId : fromId;
+
+        Card first = cardRepository.findByIdForUpdate(firstId)
+                .orElseThrow(() -> new BadRequestException("Card not found"));
+        Card second = cardRepository.findByIdForUpdate(secondId)
+                .orElseThrow(() -> new BadRequestException("Card not found"));
+
+        // Определяем, какая карта from, какая to
+        Card from = first.getId().equals(fromId) ? first : second;
+        Card to = first.getId().equals(toId) ? first : second;
+
         validateOwnership(username, from, to);
         validateCardState(from);
         validateCardState(to);
-        BigDecimal amount = request.amount();
+
         if (from.getBalance().compareTo(amount) < 0) {
             throw new BadRequestException("Insufficient funds");
         }
+
         from.setBalance(from.getBalance().subtract(amount));
         to.setBalance(to.getBalance().add(amount));
+
+        cardRepository.save(from);
+        cardRepository.save(to);
+        cardRepository.flush();
 
         Transfer transfer = Transfer.builder()
                 .fromCard(from)
@@ -52,6 +82,9 @@ public class TransferService {
                 .createdAt(LocalDateTime.now())
                 .build();
         transferRepository.save(transfer);
+
+        log.info("Transfer completed: transferId={}, fromCardId={}, toCardId={}, amount={}, username={}",
+                transfer.getId(), from.getId(), to.getId(), amount, username);
 
         return new TransferResponse(
                 transfer.getId(),
@@ -74,7 +107,6 @@ public class TransferService {
         }
         LocalDate expiration = card.getExpirationDate();
         if (expiration != null && expiration.isBefore(LocalDate.now())) {
-            card.setStatus(CardStatus.EXPIRED);
             throw new BadRequestException("Card is expired");
         }
     }
