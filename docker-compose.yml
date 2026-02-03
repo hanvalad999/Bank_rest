@@ -19,5 +19,24 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bankcards_app
+    ports:
+      - "8080:8080"
+    environment:
+      # Database connection (используем имя сервиса postgres вместо localhost)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bankcards_db
+      SPRING_DATASOURCE_USERNAME: bankcards_user
+      SPRING_DATASOURCE_PASSWORD: bankcards_pass
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-minimum-32-characters-base64-encoded}
+      APP_CARD_ENCRYPTION_KEY: ${APP_CARD_ENCRYPTION_KEY:-your-32-byte-base64-encoded-encryption-key}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:
