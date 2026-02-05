@@ -33,6 +33,12 @@ public class CardService {
         this.userService = userService;
     }
 
+    /**
+     * Создает новую карту для пользователя.
+     *
+     * @param request данные для создания карты
+     * @return созданная карта
+     */
     @Transactional
     public CardResponse createCard(CardCreateRequest request) {
         validateCardNumber(request.cardNumber());
@@ -59,6 +65,9 @@ public class CardService {
         }
     }
 
+    /**
+     * Возвращает карты текущего пользователя с возможной фильтрацией по статусу.
+     */
     public Page<CardResponse> getCardsForUser(String username, CardStatus status, Pageable pageable) {
         Page<Card> page;
         if (status == null) {
@@ -69,16 +78,25 @@ public class CardService {
         return page.map(this::toResponse);
     }
 
+    /**
+     * Возвращает все карты с возможной фильтрацией по статусу.
+     */
     public Page<CardResponse> getAllCards(CardStatus status, Pageable pageable) {
         Page<Card> page = (status == null) ? cardRepository.findAll(pageable) : cardRepository.findAllByStatus(status, pageable);
         return page.map(this::toResponse);
     }
 
+    /**
+     * Возвращает карту по идентификатору без проверки принадлежности пользователю.
+     */
     public CardResponse getCard(Long id) {
         Card card = cardRepository.findById(id).orElseThrow(() -> new NotFoundException("Card not found"));
         return toResponse(card);
     }
 
+    /**
+     * Возвращает карту по идентификатору, проверяя, что она принадлежит указанному пользователю.
+     */
     public CardResponse getCardForUser(Long id, String username) {
         Card card = cardRepository.findById(id).orElseThrow(() -> new NotFoundException("Card not found"));
         if (!card.getUser().getUsername().equals(username)) {
@@ -87,6 +105,9 @@ public class CardService {
         return toResponse(card);
     }
 
+    /**
+     * Обновляет статус карты, проверяя допустимость перехода.
+     */
     @Transactional
     public CardResponse updateStatus(Long id, CardStatus status) {
         Card card = cardRepository.findById(id).orElseThrow(() -> new NotFoundException("Card not found"));
@@ -98,6 +119,9 @@ public class CardService {
         return toResponse(card);
     }
 
+    /**
+     * Обрабатывает запрос на блокировку карты от пользователя.
+     */
     @Transactional
     public CardResponse requestBlock(Long id, String username) {
         Card card = cardRepository.findById(id).orElseThrow(() -> new NotFoundException("Card not found"));
@@ -112,11 +136,17 @@ public class CardService {
         return toResponse(card);
     }
 
+    /**
+     * Возвращает баланс карты по идентификатору.
+     */
     public BigDecimal getBalance(Long id) {
         Card card = cardRepository.findById(id).orElseThrow(() -> new NotFoundException("Card not found"));
         return card.getBalance();
     }
 
+    /**
+     * Удаляет карту по идентификатору.
+     */
     @Transactional
     public void deleteCard(Long id) {
         if (!cardRepository.existsById(id)) {

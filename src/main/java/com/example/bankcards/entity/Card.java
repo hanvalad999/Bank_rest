@@ -7,6 +7,9 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Банковская карта пользователя.
+ */
 @Entity
 @Table(name = "cards")
 @Getter

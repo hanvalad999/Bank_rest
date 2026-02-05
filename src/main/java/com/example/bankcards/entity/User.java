@@ -6,6 +6,9 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Пользователь системы (клиент или администратор).
+ */
 @Entity
 @Table(name = "users")
 @Getter

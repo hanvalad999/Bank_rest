@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Реализация {@link UserDetailsService}, загружающая пользователей из БД.
+ */
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 

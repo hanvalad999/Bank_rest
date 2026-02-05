@@ -30,11 +30,23 @@ public class AuthController {
         this.userService = userService;
     }
 
+    /**
+     * Регистрирует нового пользователя с ролью USER.
+     *
+     * @param request данные регистрации
+     * @return созданный пользователь
+     */
     @PostMapping("/register")
     public UserResponse register(@Valid @RequestBody RegisterRequest request) {
         return userService.register(request);
     }
 
+    /**
+     * Аутентифицирует пользователя и выдает JWT-токен.
+     *
+     * @param request учетные данные пользователя
+     * @return токен доступа и информация о пользователе
+     */
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody AuthRequest request) {
         Authentication authentication = authenticationManager.authenticate(

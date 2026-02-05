@@ -12,6 +12,9 @@ import java.security.Key;
 import java.time.Instant;
 import java.util.Date;
 
+/**
+ * Сервис для генерации и валидации JWT-токенов.
+ */
 @Service
 public class JwtService {
 
@@ -21,6 +24,13 @@ public class JwtService {
         this.properties = properties;
     }
 
+    /**
+     * Генерирует новый JWT-токен для указанного пользователя.
+     *
+     * @param username имя пользователя
+     * @param role     роль пользователя
+     * @return строковое представление JWT
+     */
     public String generateToken(String username, String role) {
         Instant now = Instant.now();
         return Jwts.builder()
@@ -32,6 +42,12 @@ public class JwtService {
                 .compact();
     }
 
+    /**
+     * Проверяет подпись и срок действия токена.
+     *
+     * @param token JWT
+     * @return true, если токен валиден
+     */
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token);
@@ -41,10 +57,16 @@ public class JwtService {
         }
     }
 
+    /**
+     * Извлекает имя пользователя из токена.
+     */
     public String extractUsername(String token) {
         return getClaims(token).getSubject();
     }
 
+    /**
+     * Извлекает роль пользователя из токена.
+     */
     public String extractRole(String token) {
         Object role = getClaims(token).get("role");
         return role == null ? null : role.toString();

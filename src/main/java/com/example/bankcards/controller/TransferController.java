@@ -21,6 +21,12 @@ public class TransferController {
         this.transferService = transferService;
     }
 
+    /**
+     * Выполняет перевод средств между картами текущего пользователя.
+     *
+     * @param request данные перевода
+     * @return информация о выполненном переводе
+     */
     @PreAuthorize("hasRole('USER')")
     @PostMapping
     public TransferResponse transfer(@Valid @RequestBody TransferRequest request) {

@@ -25,18 +25,35 @@ public class UserController {
         this.userService = userService;
     }
 
+    /**
+     * Создает нового пользователя с указанной ролью.
+     *
+     * @param request данные для создания пользователя
+     * @return созданный пользователь
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public UserResponse createUser(@Valid @RequestBody CreateUserRequest request) {
         return userService.createUser(request);
     }
 
+    /**
+     * Возвращает страницу пользователей.
+     *
+     * @param pageable параметры пагинации
+     * @return страница пользователей
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public Page<UserResponse> getUsers(Pageable pageable) {
         return userService.getUsers(pageable);
     }
 
+    /**
+     * Удаляет пользователя по идентификатору.
+     *
+     * @param id идентификатор пользователя
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping
     public void deleteUser(@RequestParam Long id) {

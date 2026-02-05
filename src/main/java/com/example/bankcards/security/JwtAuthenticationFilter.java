@@ -21,6 +21,10 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Фильтр, который извлекает JWT из заголовка Authorization и
+ * аутентифицирует пользователя в контексте Spring Security.
+ */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 

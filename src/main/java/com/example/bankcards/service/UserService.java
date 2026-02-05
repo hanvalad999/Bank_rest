@@ -29,6 +29,12 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Регистрирует нового пользователя с ролью USER.
+     *
+     * @param request данные регистрации
+     * @return созданный пользователь
+     */
     @Transactional
     public UserResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.username())) {
@@ -44,6 +50,9 @@ public class UserService {
         return toResponse(user);
     }
 
+    /**
+     * Создает пользователя с заданной ролью (используется администратором).
+     */
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
         if (userRepository.existsByUsername(request.username())) {
@@ -60,20 +69,32 @@ public class UserService {
         return toResponse(user);
     }
 
+    /**
+     * Возвращает страницу пользователей.
+     */
     public Page<UserResponse> getUsers(Pageable pageable) {
         return userRepository.findAll(pageable).map(this::toResponse);
     }
 
+    /**
+     * Возвращает сущность пользователя по имени пользователя.
+     */
     public User getUserEntityByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
+    /**
+     * Возвращает сущность пользователя по идентификатору.
+     */
     public User getUserEntityById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
+    /**
+     * Удаляет пользователя по идентификатору.
+     */
     @Transactional
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
