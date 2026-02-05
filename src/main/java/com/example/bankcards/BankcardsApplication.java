@@ -4,6 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.retry.annotation.EnableRetry;
 
+/**
+ * Точка входа в приложение управления банковскими картами.
+ */
 @SpringBootApplication
 @EnableRetry
 public class BankcardsApplication {

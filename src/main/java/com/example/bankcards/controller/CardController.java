@@ -32,18 +32,39 @@ public class CardController {
         this.cardService = cardService;
     }
 
+    /**
+     * Создает новую банковскую карту для указанного пользователя.
+     *
+     * @param request данные для создания карты
+     * @return созданная карта
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public CardResponse createCard(@Valid @RequestBody CardCreateRequest request) {
         return cardService.createCard(request);
     }
 
+    /**
+     * Возвращает страницу карт с возможной фильтрацией по статусу.
+     *
+     * @param status   необязательный статус карты для фильтрации
+     * @param pageable параметры пагинации
+     * @return страница карт
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public Page<CardResponse> getAllCards(@RequestParam(required = false) CardStatus status, Pageable pageable) {
         return cardService.getAllCards(status, pageable);
     }
 
+    /**
+     * Возвращает карту по идентификатору.
+     * <p>
+     * Администратор может получать любую карту, обычный пользователь — только свои.
+     *
+     * @param id идентификатор карты
+     * @return карта
+     */
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/{id}")
     public CardResponse getCard(@PathVariable Long id) {
@@ -59,6 +80,14 @@ public class CardController {
         return cardService.getCardsForUser(SecurityUtil.getCurrentUsername(), status, pageable);
     }
 
+    /**
+     * Возвращает баланс карты.
+     * <p>
+     * Администратор может запрашивать баланс любой карты, пользователь — только своей.
+     *
+     * @param id идентификатор карты
+     * @return баланс карты
+     */
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/{id}/balance")
     public BigDecimal getBalance(@PathVariable Long id) {
@@ -81,6 +110,11 @@ public class CardController {
         return cardService.requestBlock(id, SecurityUtil.getCurrentUsername());
     }
 
+    /**
+     * Удаляет карту по идентификатору.
+     *
+     * @param id идентификатор карты
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public void deleteCard(@PathVariable Long id) {

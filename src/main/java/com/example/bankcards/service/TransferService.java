@@ -33,6 +33,13 @@ public class TransferService {
         this.transferRepository = transferRepository;
     }
 
+    /**
+     * Выполняет перевод средств между картами пользователя с учетом блокировок и повторов при конфликте блокировок.
+     *
+     * @param username имя текущего пользователя
+     * @param request  данные перевода
+     * @return информация о выполненном переводе
+     */
     @Retryable(retryFor = {PessimisticLockingFailureException.class}, maxAttempts = 3, backoff = @Backoff(delay = 100))
     @Transactional
     public TransferResponse transfer(String username, TransferRequest request) {

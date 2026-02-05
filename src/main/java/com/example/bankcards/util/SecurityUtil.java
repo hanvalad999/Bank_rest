@@ -4,11 +4,19 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+/**
+ * Утилитарные методы для работы с текущим аутентифицированным пользователем.
+ */
 public final class SecurityUtil {
 
     private SecurityUtil() {
     }
 
+    /**
+     * Возвращает имя текущего аутентифицированного пользователя.
+     *
+     * @return имя пользователя или null, если пользователь не аутентифицирован
+     */
     public static String getCurrentUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -17,6 +25,12 @@ public final class SecurityUtil {
         return authentication.getName();
     }
 
+    /**
+     * Проверяет, имеет ли текущий пользователь указанную роль.
+     *
+     * @param role роль без префикса ROLE_
+     * @return true, если роль присутствует
+     */
     public static boolean hasRole(String role) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {

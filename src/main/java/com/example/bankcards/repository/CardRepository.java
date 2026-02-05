@@ -13,13 +13,29 @@ import jakarta.persistence.LockModeType;
 
 import java.util.Optional;
 
+/**
+ * Репозиторий для работы с банковскими картами.
+ */
 public interface CardRepository extends JpaRepository<Card, Long> {
+    /**
+     * Возвращает карты пользователя.
+     */
     Page<Card> findAllByUserUsername(String username, Pageable pageable);
 
+    /**
+     * Возвращает карты пользователя c указанным статусом.
+     */
     Page<Card> findAllByUserUsernameAndStatus(String username, CardStatus status, Pageable pageable);
 
+    /**
+     * Возвращает все карты с указанным статусом.
+     */
     Page<Card> findAllByStatus(CardStatus status, Pageable pageable);
 
+    /**
+     * Находит карту по id с установкой блокировки PESSIMISTIC_WRITE
+     * для использования в конкурентных операциях (например, при переводах).
+     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Card c where c.id = :id")
     Optional<Card> findByIdForUpdate(@Param("id") Long id);

@@ -2,6 +2,13 @@ databaseChangeLog:
   - changeSet:
       id: 1-create-users
       author: system
+      preConditions:
+        onFail: MARK_RAN
+        onError: HALT
+        nestedPreconditions:
+          - not:
+              - tableExists:
+                  tableName: users
       changes:
         - createTable:
             tableName: users
@@ -32,6 +39,15 @@ databaseChangeLog:
   - changeSet:
       id: 2-create-cards
       author: system
+      preConditions:
+        onFail: HALT
+        onError: HALT
+        nestedPreconditions:
+          - tableExists:
+              tableName: users
+          - not:
+              - tableExists:
+                  tableName: cards
       changes:
         - createTable:
             tableName: cards
@@ -75,6 +91,15 @@ databaseChangeLog:
   - changeSet:
       id: 3-create-transfers
       author: system
+      preConditions:
+        onFail: HALT
+        onError: HALT
+        nestedPreconditions:
+          - tableExists:
+              tableName: cards
+          - not:
+              - tableExists:
+                  tableName: transfers
       changes:
         - createTable:
             tableName: transfers

@@ -18,6 +18,9 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Денежный перевод между двумя картами пользователя.
+ */
 @Entity
 @Table(name = "transfers")
 @Getter

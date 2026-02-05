@@ -3,6 +3,9 @@ package com.example.bankcards.config;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
 
+/**
+ * Проверяет корректность критичных конфигурационных параметров при старте приложения.
+ */
 @Component
 public class ConfigurationValidator {
 
@@ -14,6 +17,11 @@ public class ConfigurationValidator {
         this.cardEncryptionProperties = cardEncryptionProperties;
     }
 
+    /**
+     * Валидирует настройки JWT и ключ шифрования карт.
+     *
+     * @throws IllegalStateException если конфигурация некорректна
+     */
     @PostConstruct
     public void validateConfiguration() {
         if (jwtProperties.getSecret() == null || jwtProperties.getSecret().isBlank()) {

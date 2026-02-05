@@ -17,6 +17,9 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
+/**
+ * JPA-конвертер, шифрующий и расшифровывающий номера карт с помощью AES/GCM.
+ */
 @Converter
 @Component
 public class AesCardNumberConverter implements AttributeConverter<String, String>, ApplicationContextAware {
